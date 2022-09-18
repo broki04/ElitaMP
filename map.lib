@@ -1,0 +1,366 @@
+/*
+    Elita DeathMatch v0.4
+
+    Legenda:
+    - (+): dodane
+    - (*): do wdro¿enia po wystartowaniu openMultiplayer
+    - (?): do przemyœlenia
+
+    1) Gie³da prywatnych pojazdów:
+        - przerobiæ panel gie³dy (opcja anulowania sprzeda¿y);
+        - wprowadziæ opcjê wymiany pojazdami miêdzy dwoma graczami;
+
+    2) Prywatne pojazdy:
+        - dodaæ warsztaty samochodzie, gdzie mo¿na przerabiaæ pojazd (tuning, doczepiane obiekty, mo¿liwoœæ za³o¿enia tekstury, mo¿liwoœæ dodania naklejki z napisem);
+
+    3) Do poprawy:
+        - (+) zmiana gangów na zespo³y (mocna zmiana w plikach);
+        - (+) wykonywanie transferów miêdzy gangowych;
+        - (30%) przy zakoñczeniu ruletki usun¹æ dŸwiêk krêcenia siê jej;
+
+    /////////////////////////////////////////////////////////////////////
+
+    BILARD POSITION:
+    {2001.52173, 1028.82935, 994.46942},
+    {1993.46472, 1028.86719, 994.46881},
+    {1985.46924, 1028.85730, 994.46875},
+    {1993.46448, 1006.86554, 994.46881},
+    {1985.46753, 1006.87628, 994.46790},
+    {2001.45996, 1006.86584, 994.46814}
+*/
+
+#pragma dynamic 10667
+const buildNumber = 3561;
+
+// main include
+#define     NO_TAGS
+#include    a_samp
+
+// max_ definitions
+#undef MAX_PLAYERS
+#define MAX_PLAYERS         20
+#define MAX_BUSINESS        100
+#define MAX_PRIVCARS        1000
+#define MAX_TELEPORTS       100
+#define MAX_GANGS           50
+#define MAX_GANGBASES       10
+#define MAX_BASE_OBJECTS    20
+#define MAX_SERVER_VEH      300
+
+// another includes
+#define     PP_SYNTAX_AWAIT
+#define     YSI_NO_HEAP_MALLOC
+
+#include    a_mysql
+#include    3DTryg
+#include    streamer
+#include    sscanf2
+#include    physics
+#include    omp
+#include    progress2
+#include    pawn.cmd
+#include    pawn.regex
+#include    pawn.raknet
+#include    pawnplus
+
+#include    YSI_Coding\y_va
+#include    YSI_Visual\y_dialog
+#include    YSI_Coding\y_timers
+#include    YSI_Extra\y_inline_mysql
+#include    YSI_Extra\y_inline_timers
+
+#include    nex-ac
+#include    dialog-pages
+#include    samp_bcrypt
+#include    md-sort
+#include    a_zone
+#include    eSelection
+#include    ColAndreas
+#include    GeoLite
+#include    weapon-config
+
+#pragma warning disable 239
+#pragma warning disable 214
+
+#define AUTHOR      "Broki"
+#define MAPNAME     "newDeathMatch"
+#define VERSION     "v0.4"
+#define DISCORD     "chuj"
+
+enum {
+    DIALOG_UNUSED = 0,
+    DIALOG_REGISTER = 1,
+    DIALOG_LOGIN,
+    DIALOG_KOLORY,
+    DIALOG_HUD,
+    DIALOG_HUD_COLOR,
+    DIALOG_QUEST,
+    DIALOG_INTERIORY,
+    DIALOG_POJAZDY,
+    DIALOG_HEIST_VAULT,
+    DIALOG_RANKING,
+    DIALOG_LAKIER_COLOR_A,
+    DIALOG_LAKIER_COLOR_B,
+    DIALOG_DRIVING_EXAM,
+    DIALOG_TUTORIAL,
+
+    DIALOG_WARGAME_CREATOR,
+    DIALOG_WARGAME_NAME,
+    DIALOG_WARGAME_WEAPONS,
+
+    DIALOG_RAPORTY,
+    DIALOG_RAPORT_PANEL,
+    DIALOG_RAPORT_PUNISH,
+    DIALOG_RAPORT_PUNISH_PARAMS,
+
+    DIALOG_HELP,
+    DIALOG_HELP_CMDS,
+    DIALOG_HELP_CMDLIST,
+    DIALOG_HELP_ADMIN,
+
+    DIALOG_BANK_PANEL,
+    DIALOG_BANK_PAYMENT,
+    DIALOG_BANK_PRZELEW,
+    DIALOG_BANK_TARGET,
+    DIALOG_BANK_KWOTA,
+    DIALOG_BANK_CREDIT,
+
+    DIALOG_BANLIST,
+    DIALOG_BAN_MANAGE,
+    DIALOG_BAN_REASON,
+    DIALOG_BAN_EXPIRE,
+
+    DIALOG_EVENT_PANEL,
+    DIALOG_EVENT_CONFIRM,
+    DIALOG_EVENT_PARAMS,
+    DIALOG_EVENT_COLOR,
+    DIALOG_EVENT_SETTINGS,
+    DIALOG_EVENT_NAME,
+    DIALOG_EVENT_TYPE,
+    DIALOG_EVENT_VEHICLE,
+
+    DIALOG_TRUCK_PANEL,
+    DIALOG_TRUCK_TOWAR,
+    DIALOG_TRUCK_NEWBIE,
+
+    DIALOG_BUSINESS_CREATOR,
+    DIALOG_BUSINESS_CREATOR_NAME,
+    DIALOG_BUSINESS_CREATOR_RESPECT,
+    DIALOG_BUSINESS_CREATOR_MONEY,
+    DIALOG_BUSINESS_PANEL,
+    DIALOG_BUSINESS_MANAGE,
+    DIALOG_BUSINESS_RENAME,
+    DIALOG_BUSINESS_PRICE,
+    DIALOG_BUSINESS_REWARD,
+
+    DIALOG_CASINO_SHOP,
+    DIALOG_CASINO_TOKEN_BUY,
+    DIALOG_CASINO_TOKEN_EXCHANGE,
+
+    DIALOG_ROULETTE_PANEL,
+    DIALOG_ROULETTE_TOKEN,
+    DIALOG_ROULETTE_NUMBER,
+
+    DIALOG_POOL_PANEL,
+    DIALOG_POOL_TOKEN,
+    DIALOG_POOL_INVITE,
+
+    DIALOG_ADMIN_PANEL,
+    DIALOG_ADMIN_LIST,
+    DIALOG_ADMIN_PERMISSION,
+    DIALOG_ADMIN_LEVEL,
+    DIALOG_ADMIN_SELECT,
+    DIALOG_ADMIN_LOGIN,
+    DIALOG_ADMIN_PASSWORD,
+    DIALOG_ADMIN_DUTY,
+    DIALOG_ADMIN_PASSWORD_CHANGE,
+    DIALOG_ADMIN_RANKING,
+
+    DIALOG_PRIVCAR_NEWBIE,
+    DIALOG_PRIVCAR_BUY,
+    DIALOG_PRIVCAR_MANAGE,
+    DIALOG_PRIVCAR_ETYKIETA,
+    DIALOG_PRIVCAR_HEADER,
+    DIALOG_PRIVCAR_ETYKIETA_COLOR,
+    DIALOG_PRIVCAR_KEYS,
+    DIALOG_PRIVCAR_GIVE_KEYS,
+    DIALOG_PRIVCAR_FUEL,
+    DIALOG_PRIVCAR_PLATE,
+    DIALOG_PRIVCAR_PLATE_COLOR,
+    DIALOG_PRIVCAR_PLATE_NAME,
+    DIALOG_PRIVCAR_TELEPORT,
+    DIALOG_PRIVCAR_ATTACHMENT,
+    DIALOG_PRIVCAR_ATTACH_SELECT,
+    DIALOG_PRIVCAR_ULEPSZENIA,
+    DIALOG_PRIVCAR_ULEPSZENIA_BUY,
+    DIALOG_PRIVCAR_MODEL,
+    DIALOG_PRIVCAR_ENGINE,
+
+    DIALOG_BASE_BUY,
+    DIALOG_BASE_PANEL,
+    DIALOG_BASE_NAME,
+    DIALOG_BASE_COST,
+    DIALOG_BASE_MENU,
+    DIALOG_BASE_SELL,
+    DIALOG_BASE_SELL_PANEL,
+    DIALOG_BASE_SELL_NAME,
+    DIALOG_BASE_SELL_COST,
+    DIALOG_BASE_OBJECTS,
+    DIALOG_BASE_OBJECT_MENU,
+
+    DIALOG_GIELDA_SELL,
+    DIALOG_GIELDA_BUY,
+    DIALOG_GIELDA_MAIN,
+
+    DIALOG_FISH_RODE,
+    DIALOG_FISH_BAIT,
+    DIALOG_FISH_BAIT_AMOUNT,
+    DIALOG_FISH_ULEPSZENIA,
+    DIALOG_FISH_PANEL,
+    DIALOG_FISH_LIST,
+    DIALOG_FISH_CATEGORY,
+    DIALOG_FISH_SHOP,
+
+    DIALOG_SETTINGS,
+    DIALOG_NEW_NICK,
+    DIALOG_NEW_PASSWORD,
+    DIALOG_ACCOUNT_SECURITY,
+    DIALOG_ACCOUNT_QUESTION,
+    DIALOG_ACCOUNT_ANSWER,
+    DIALOG_ACCOUNT_PINCODE,
+    DIALOG_QUESTION_LOGIN,
+    DIALOG_PINCODE_LOGIN,
+    DIALOG_ACCOUNT_POSITION,
+    DIALOG_ACCOUNT_CHAT,
+
+    DIALOG_BET_NEWBIE,
+    DIALOG_BET_SELECT,
+    DIALOG_BET_REWARD,
+    DIALOG_BET_RESPECT,
+    DIALOG_BET_MONEY,
+
+    DIALOG_PRACA_PANEL,
+    DIALOG_PRACA_LIST,
+    DIALOG_PRACA_REWARD,
+    DIALOG_PRACA_ULEPSZENIA,
+    DIALOG_PRACA_TOP,
+
+    DIALOG_TELEPORT_SELECT,
+    DIALOG_TELEPORT_CATEGORY,
+    DIALOG_TELEPORT_NAME,
+    DIALOG_TELEPORT_CREATOR,
+    DIALOG_TELEPORT_COMMAND,
+    DIALOG_TELEPORT_LIST,
+    DIALOG_TELEPORT_MANAGE,
+    DIALOG_TELEPORT_CHANGE,
+    DIALOG_TELEPORT_EDIT_NAME,
+    DIALOG_TELEPORT_EDIT_CMD,
+
+    DIALOG_RACE_CREATOR,
+    DIALOG_RACE_CREATOR_NAME,
+    DIALOG_RACE_CREATOR_VEHICLE,
+
+    DIALOG_GANG,
+    DIALOG_GANG_CREATOR_NAME,
+    DIALOG_GANG_CREATOR_TAG,
+    DIALOG_GANG_CREATOR_COLOR,
+    DIALOG_GANG_CREATOR_RESULT,
+    DIALOG_GANG_MEMBERS,
+    DIALOG_GANG_NEWBIE,
+    DIALOG_GANG_MANAGE_MEMBER,
+    DIALOG_GANG_RANK_NAME,
+    DIALOG_GANG_RANK_COLOR,
+    DIALOG_GANG_RANK_PERMS,
+    DIALOG_GANG_INVITE,
+    DIALOG_GANG_INVITE_LIST,
+    DIALOG_GANG_LIST,
+    DIALOG_GANG_INFO,
+    DIALOG_GANG_ACHIEVEMENTS,
+    DIALOG_GANG_SETTINGS,
+    DIALOG_GANG_RENAME,
+    DIALOG_GANG_RETAG,
+    DIALOG_GANG_RECOLOR,
+    DIALOG_GANG_REOWNER,
+    DIALOG_GANG_DELETE,
+    DIALOG_GANG_MARKET,
+    DIALOG_GANG_MARKET_LIST,
+    DIALOG_GANG_MARKET_TYPE,
+    DIALOG_GANG_MARKET_TRANSFER,
+    DIALOG_GANG_MARKET_LOAN,
+    DIALOG_GANG_TRANSFER_CONFIRM,
+    DIALOG_GANG_LOAN_CONFIRM,
+    DIALOG_GANG_BUDGET,
+    DIALOG_GANG_ULEPSZENIA,
+    DIALOG_GANG_HEIST,
+    DIALOG_GANG_TOP,
+
+    DIALOG_SPARING_PANEL,
+    DIALOG_SPARING_OPTION,
+    DIALOG_SPARING_LIMIT,
+    DIALOG_SPARING_TIME,
+    DIALOG_SPARING_ARENY,
+    DIALOG_SPARING_ZESTAW,
+    DIALOG_SPARING_SPECTATE,
+
+    DIALOG_OWNRANK_NAME,
+    DIALOG_OWNRANK_COLOR,
+    DIALOG_OWNRANK_PANEL,
+    DIALOG_OWNRANK_EDIT_NAME,
+    DIALOG_OWNRANK_EDIT_COLOR,
+
+    DIALOG_GORNICTWO,
+    DIALOG_PICKAXE_MANAGE,
+    DIALOG_GORNICTWO_PLECAK,
+    DIALOG_PICKAXE_NAME,
+
+    DIALOG_ULEPSZENIA,
+    DIALOG_ULEPSZENIA_SELECT,
+    DIALOG_ULEPSZENIA_LEVEL,
+    DIALOG_ULEPSZENIE_BUY,
+
+    DIALOG_ACHIEVEMENTS,
+    DIALOG_ACHIEVEMENT_LIST,
+};
+
+#include    source/tree.c
+
+main() {
+    new year, month, day, hour, minute;
+    getdate(year, month, day), gettime(hour, minute);
+    TextDrawSetString(tdDate, form("~w~~h~%02d~g~~h~:~w~~h~%02d~n~~w~~h~%02d~g~~h~.~w~~h~%02d~g~~h~.~w~~h~%d", hour, minute, day, month, year));
+
+    SendRconCommand("hostname ••••• [PL] •••» ELITA SERVER™ «••• [ES] •••••");
+    SendRconCommand("gamemodetext • DM/RPG/Stunt/Drift •");
+    SendRconCommand("weburl "#DISCORD"");
+    SendRconCommand("mapname newDeathMatch "VERSION"");
+    SendRconCommand("language • PL/Polish/Polski •");
+    SendRconCommand("ackslimit 30000");
+
+    print(" \n");
+    print("---------------------------------------");
+    print("    "#MAPNAME" "VERSION" - loaded!");
+    print("   Last update: "#DATE"");
+    printf("     Loaded date: %02d.%02d.%d, %02d:%02d", day, month, year, hour, minute);
+    print("----------------------------------------\n");
+}
+
+alias:nowosci("news", "update", "aktualizacja")
+CMD:nowosci(playerid)
+{
+    s[0] = EOS;
+    strcat(s, ""GREEN""VERSION":\n");
+    strcat(s, ""BROWN"Data rozpoczêcia: "MINT"01.07.2022\n");
+    strcat(s, ""BROWN"Data zakoñczenia: "MINT""DATE"\n");
+    strcat(s, " \n");
+    strcat(s, ""GOLD"Nowoœci:\n");
+    strcat(s, "  "WHITE"- "RED"Wprowadzono ca³kowicie now¹ "DGREEN"gospodarkê "RED"serwera\n");
+    strcat(s, "  "WHITE"- "RED"Wprowadzono "DGREEN"sklep z broni¹"RED", jako typ biznesu\n");
+    strcat(s, "  "WHITE"- "RED"Wprowadzono "DGREEN"obserwacjê"RED" sparingu swojego gangu\n");
+    strcat(s, "  "WHITE"- "RED"Wprowadzono "DGREEN"zaci¹gniêcie kredytu "RED"w banku serwerowym\n");
+    strcat(s, " \n"); 
+    strcat(s, ""GOLD"Poprawki:\n");
+    strcat(s, "  "WHITE"- "CORAL"Poprawiono dzia³anie "LY"ruletki i slotów "CORAL"w kasynie\n");
+    strcat(s, "  "WHITE"- "CORAL"Poprawiono ustawianie "LY"typu "CORAL"eventu\n");
+    strcat(s, "  "WHITE"- "CORAL"Poprawiono wyœwietlanie "LY"nicków "CORAL"wczytywanych bezpoœrednio z bazy danych\n");
+    return showDialog(playerid, DIALOG_UNUSED, DIALOG_STYLE_LIST, ""RED"Nowoœci", s, "OK", #), 1;
+}

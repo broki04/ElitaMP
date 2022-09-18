@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build-normal",
+            "command": "C:/Users/mateu/Desktop/Elita-MP/ElitaMP/compiler.bat",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "isBackground": false,
+            "problemMatcher": "$pawncc"
+        }
+    ]
+}
